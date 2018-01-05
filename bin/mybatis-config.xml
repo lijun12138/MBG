@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<!-- 1.通过properties标签引入外部的属性文件
+		resource属性：引入类路径下的文件
+		url属性：引入一个网络上或者磁盘上的文件
+	 -->
+	 <!-- 
+	 	获取连接数据库有关信息的步骤：
+	 		1）获取properties标签中设置的值
+	 		2）如果外部属性文件中也有对应的值，将覆盖1）中的值
+	 		3）如果从1）和2）中都没有得到，将使用dataSource标签的子标签property中设置的值
+	  -->
+	<properties resource="db.properties">
+		<property name="jdbc.username" value="admin"/>
+		<property name="jdbc.password" value="123456"/>
+	</properties>
+	
+	<!-- 2.通过settings标签对MyBatis中的某些属性进行配置 -->
+	<settings>
+		<!-- settion子标签：
+			name：要设置的属性的属性名
+			value：要设置的属性值
+			mapUnderscoreToCamelCase：设置是否开启驼峰命名法，默认是false，不开启，
+				当设置为true时，数据中的下划线将自动映射为驼峰命名
+		 -->
+		<setting name="mapUnderscoreToCamelCase" value="true"/>
+		<!-- 开启延迟加载 -->
+		<setting name="lazyLoadingEnabled" value="true"/>
+		<!-- 设置按需加载 -->
+		<setting name="aggressiveLazyLoading" value="false"/>
+		<!-- 开启二级缓存 -->
+		<setting name="cacheEnabled" value="true"/>
+	</settings>
+	
+	<!-- 3.通过typeAliases标签给某些类起别名（不建议使用） -->
+	<typeAliases>
+		<!-- 
+			子标签typeAlias：给某一个类起别名
+				type属性：设置要起别名的类的全类名，默认的别名是类的首字母小写，但是别名不区分大小写
+				alias属性：设置别名
+			子标签package：给某一个包下的类起别名
+				-我们也可以通过@Alias注解给某个类起别名
+		 -->
+<!-- 		<typeAlias type="com.atguigu.mybatis.entities.Employee" alias="emp"/> -->
+		<package name="com.atguigu.mybatis.entities"/>
+	</typeAliases>
+	
+	<!-- 4.通过typeHandlers注册类型转换器 -->
+	<!-- 
+		对于日期和时间的处理：MyBatis3.4以前的版本需要我们手动注册这些处理器，以后的版本都是自动注册的
+	 -->
+<!-- 	<typeHandlers> -->
+<!-- 		<typeHandler handler="自定义的类型转换器的全类名"/> -->
+<!-- 	</typeHandlers> -->
+
+	<!-- 5.通过plugins注册插件可以对MyBatis的四大对象
+		 Executor、ParameterHandler、ResultSetHandler、StatementHandler进行拦截-->
+<!-- 	<plugins> -->
+<!-- 		<plugin interceptor="插件的全类名"></plugin> -->
+<!-- 	</plugins> -->
+
+	<!-- 6.通过environments标签配置环境们 -->
+	<!-- default属性：用来设置使用那一个环境，该属性值为环境的id属性值 -->
+	<environments default="development">
+		<!-- id属性：给当前环境设置一个唯一的标识 -->
+		<environment id="development">
+			<!-- 
+				子标签transactionManager：用来设置事务管理器
+						type属性可选值：
+							-JDBC：对应的实现JdbcTransactionFactory
+							-MANAGED：对应的实现ManagedTransactionFactory
+							-自定义：只需要实现TransactionFactory
+						不过最终事务管理器要交给Spring来配置	
+			 -->
+			<transactionManager type="JDBC" />
+			<!-- 
+				子标签dataSource：用来配置数据源
+					type属性的可选值：
+						-UNPOOLED：对应的实现UnpooledDataSourceFactory
+						-POOLED：对应的实现PooledDataSourceFactory
+						-JNDI：对应的实现JndiDataSourceFactory
+						-自定义：只需要实现DataSourceFactory
+					不过最终数据源也是在Spring中进行配置		
+			 -->
+			<dataSource type="POOLED">
+				<property name="driver" value="${jdbc.driverClass}" />
+				<property name="url" value="${jdbc.jdbcUrl}" />
+				<property name="username" value="${jdbc.username}" />
+				<property name="password" value="${jdbc.password}" />
+			</dataSource>
+		</environment>
+<!-- 		<environment id="test"></environment> -->
+	</environments>
+	
+	<!-- 7.通过databaseIdProvider标签来执行不同的sql语句 -->
+	<!-- 
+		type属性的值为：
+			-DB_VENDOR
+				-MyBatis会通过VendorDatabaseIdProvider实现类解析不同的数据库厂商的标识
+			-自定义：只需要实现DatabaseIdProvider接口	
+	 -->
+	<databaseIdProvider type="DB_VENDOR">
+		<!-- 
+			我们可以通过property标签为不同的数据库厂商起别名
+				name属性：数据库厂商的标识
+				value属性：为数据库厂商起的别名
+		 -->
+		<property name="SQL Server" value="sqlserver"/>
+		<property name="MySQL" value="mysql"/>
+		<property name="DB2" value="db2"/>
+		<property name="Oracle" value="oracle"/>
+	</databaseIdProvider>
+	
+	<!-- 8.通过mappers标签注册Mapper接口的映射文件 -->
+	<mappers>
+		<!-- 注册接口的映射文件 -->
+		<!-- 
+			子标签mapper：注册映射文件
+				resource属性：注册类路径下的映射文件
+				url：注册网络或者磁盘上的映射文件
+				class：设置Mapper接口的全类名
+					-如果使用注解的方式可以执行成功（不建议使用注解的方式）
+					-如果不使用注解的方式，Mapper接口的映射文件必须要与Mapper接口同名并且在同一个包下
+			子标签package：通过指定包名来注册映射文件
+					-如果使用注解的方式可以执行成功（不建议使用注解的方式）
+					-如果不使用注解的方式，Mapper接口的映射文件必须要与Mapper接口同名并且在同一个包下	
+		 -->
+		<mapper resource="com/atguigu/mybatis/mapper/EmployeeMapper.xml" />
+<!-- 			<mapper class="com.atguigu.mybatis.mapper.EmployeeMapper"/> -->
+<!-- 			<package name="com.atguigu.mybatis.mapper"/> -->
+	</mappers>
+</configuration>
